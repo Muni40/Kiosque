@@ -1,0 +1,15 @@
+ *.pyc
+*.pyd
+*.sqlite3*
+*.map
+eFeza/settings.py
+
+.vscode
+
+**__pycache__
+
+/media
+/venv
+
+**migrations
+*.db
