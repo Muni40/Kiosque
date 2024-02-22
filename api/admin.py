@@ -1,5 +1,5 @@
 from typing import Any
-from django.contrib import admin
+from django.contrib import admin,messages
 from .models import *
 
 
@@ -12,7 +12,7 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Kiosk)
 class KioskAdmin(admin.ModelAdmin):    
-     list_display= "nom", "addresse", "contact"
+     list_display= "nom", "addresse", "contact","NIF","RC",
      search_fields = "nom","addresse",
      #search_fields = "profile__telephone","attribution","profile__user__first_name",
      #list_filter = "attribution",
@@ -21,28 +21,49 @@ class KioskAdmin(admin.ModelAdmin):
 @admin.register(Attribution)
 class AttributionAdmin(admin.ModelAdmin):
          list_display = "profile","attribution","kiosk",
-         search_fields = "attribution","profile__user__first_name","profile__user__last_name","kiosk__nom",
-         list_filter=  "attribution","profile__user__first_name","profile__user__last_name","kiosk__nom",
+         search_fields = "attribution","profile__user__first_name","profile__user__last_name","kiosk__nom","profile__telephone"
+         list_filter=  "attribution",
 
 @admin.register(Produit)
 class ProduitAdmin(admin.ModelAdmin):
-     list_display = "nom","kiosk" ,"prix"
+     list_display = "nom","kiosk" ,"prix","quantite",    
      search_fields= "nom","kiosk__nom",
      list_filter = "nom","kiosk__nom","prix",
 
+
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-     list_display= "produit","quantite","expiration","profile"
+     list_display= "produit","quantite","expiration","profile","created_at",
      search_fields= "produit","created_at","expiration",
      list_filter = "produit","expiration",
 
-     def save_model(self, request, obj, form, change) -> None:
-           
+     def save_model(self, request, obj:Stock, form, change) :
+           profile = request.user.profile
            if not change:
-                profile = request.user.profile
-                obj.profile = profile
+                produit = obj.produit
+                produit.quantite += obj.quantite
+                produit.save()
+           obj.profile = profile
            obj.save()
-      
+
+
+     def delete_model(self, request, obj:Stock):
+        produit = obj.produit
+        produit.quantite += obj.quantite
+        produit.save()
+        obj.delete()
+        self.message_user(request, "vyahanaguritse neza cane", messages.SUCCESS)
+    
+     def delete_queryset(self, request, queryset):
+        for stock in queryset:
+            produit = stock.produit
+            produit.quantite += stock.quantite
+            produit.save()
+            stock.delete()
+            self.message_user(request, "vyahanaguritse neza cane", messages.SUCCESS)
+
+    
+#quantite = quantite_se_trouvant_dans_le_stock -quantite_vendue-quantite_perdue     
 
 @admin.register(Etagere)
 class EtagereAdmin(admin.ModelAdmin):
@@ -56,6 +77,30 @@ class VenteAdmin(admin.ModelAdmin):
       search_fields = "produit","quantite",
       list_filter = "produit","quantite",
 
+      def save_model(self, request, obj:Stock, form, change):
+        if not change :
+             produit = obj.produit
+             produit.quantite -= obj.quantite
+             produit.save()
+        obj.user = request.user
+        obj.save()
+
+      def delete_model(self, request, obj:Vente):
+        produit = obj.produit
+        produit.quantite += obj.quantite
+        produit.save()
+        obj.delete()
+        self.message_user(request, "vyahanaguritse neza cane", messages.SUCCESS)
+    
+      def delete_queryset(self, request, queryset):
+        for vente in queryset:
+            produit = vente.produit
+            produit.quantite += vente.quantite
+            produit.save()
+            vente.delete()
+            self.message_user(request, "vyahanaguritse neza cane", messages.SUCCESS)
+ 
+
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
       list_display= "nom","telephone","nif",
@@ -67,32 +112,105 @@ class ClientAdmin(admin.ModelAdmin):
 #      list_display= "vendeur","date",
 #      search_fields = "vendeur","client",
 #      list_filter = "vendeur","date",
+
+
+#je veux que a chaque fois je fais un paiement, il vient s'ajouter dans la partie get_montant.donc dans montant_paye sera montre la sommation de toutes les paiements deja effectue
+             
+
+#     def get_vendeur_attributs(self,obj):
+#          return f"{obj.vendeur__user.first_name} {obj.vendeur.user.last_name} {obj.vendeur.telephone}"
+
+#     def prix_total(self):
+#         total = sum(vente.prix_total for vente in self.vente_set.all())
+#         return total
+
 @admin.register(Commande)
 class CommandeAdmin(admin.ModelAdmin):
-    list_display = ['get_vendeur_attributs', 'date', 'prix_total']
-    search_fields = ['vendeur__user__first_name', 'vendeur__user__last_name']
-    readonly_fields = ['prix_total']
+    list_display = ['vendeur', 'date', 'get_prix_total', 'client','montant_paye']
+    list_filter = 'date',
+    search_fields = 'vendeur__user__first_name', 'vendeur__user__last_name',
+    readonly_fields = ['prix_total','montant_paye']
 
-    def get_vendeur_attributs(self,obj):
-         return f"{obj.vendeur__user.first_name} {obj.vendeur.user.last_name} {obj.vendeur.telephone}"
+    def save_model(self, request, obj, form, change):
+        vendeur = request.user.profile
+        obj.vendeur = vendeur
+        obj.save()
 
-    def prix_total(self):
-        total = sum(vente.prix_total for vente in self.vente_set.all())
+    def get_prix_total(self, obj):
+        total = sum(vente.produit.prix * vente.quantite for vente in obj.vente_set.all())
         return total
+    get_prix_total.short_description = 'Prix Total'
 
-     
+    def delete_model(self, request, obj:Commande):
+        produit = obj.produit
+        produit.quantite += obj.quantite
+        produit.save()
+        self.delete()
+        self.message_user(request, "vyahanaguritse neza cane", messages.SUCCESS)
+    
+    def delete_queryset(self, request, queryset):
+        for commande in queryset:
+            produit = commande.produit
+            produit.quantite += commande.quantite
+            produit.save()
+            commande.delete()
+            self.message_user(request, "vyahanaguritse neza cane", messages.SUCCESS)
+
+    def montant_paye(self, obj):
+        payments = Payment.objects.filter(commande=obj)
+        total_paid = sum(payment.somme for payment in payments)
+        return total_paid
+    #montant_paye.short_description = 'Montant Payé'
+
+
+
+
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
       list_display= "commande","somme","date","receveur",
       search_fields = "commande","receveur",
       list_filter = "commande","date","receveur",
-      
+
+     #  def save_model(self, request, obj, form, change):
+     #    obj.save()
+     #    commande = obj.commande
+     #    total_paid = Payment.objects.filter(commande=commande).aggregate(total_paid=models.Sum('somme'))['total_paid']
+     #    commande.montant_paye = total_paid
+     #    commande.save()
+
      
+          
 @admin.register(Perte)
 class PerteAdmin(admin.ModelAdmin):
-      list_display= "produit","quantite","motif",
+      list_display= "produit","quantite","motif","date",
       search_fields = "produit","motif","quantite",
-      list_filter = "produit","quantite","date"
+      list_filter = "date",
+
+
+      def save_model(self, request, obj:Stock, form, change):
+        if not change :
+             produit = obj.produit
+             produit.quantite -= obj.quantite
+             produit.save()
+        obj.user = request.user
+        obj.save()
+
+      def delete_model(self, request, obj:Perte):
+        produit = obj.produit
+        produit.quantite += obj.quantite
+        produit.save()
+        obj.delete()
+        self.message_user(request, "vyahanaguritse neza cane", messages.SUCCESS)
+    
+      def delete_queryset(self, request, queryset):
+        for perte in queryset:
+            produit = perte.produit
+            produit.quantite += perte.quantite
+            produit.save()
+            perte.delete()
+            self.message_user(request, "vyahanaguritse neza cane", messages.SUCCESS)
+
+    
  
      
 
