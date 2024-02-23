@@ -1,7 +1,11 @@
 from typing import Any
 from django.contrib import admin,messages
 from .models import *
-
+from django.utils.safestring import mark_safe
+from django.db import transaction
+from admin_totals.admin import ModelAdminTotals
+from import_export.admin import ImportExportModelAdmin
+from .ressources import ProduitResource
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
@@ -25,12 +29,82 @@ class AttributionAdmin(admin.ModelAdmin):
          list_filter=  "attribution",
 
 @admin.register(Produit)
-class ProduitAdmin(admin.ModelAdmin):
-     list_display = "nom","kiosk" ,"prix","quantite",    
+class ProduitAdmin(ImportExportModelAdmin,admin.ModelAdmin):
+     list_display = "nom","kiosk" ,"prix","quantite","ventes","pertes"    
      search_fields= "nom","kiosk__nom",
      list_filter = "nom","kiosk__nom","prix",
+     list_editable ="prix",
+     actions = "vendre","perdue","augmenter_stock"
+     resource_class = ProduitResource
+
+     def ventes(self, obj:Vente):
+        return mark_safe(f"<a href='/admin/api/vente/?vente__id={obj.id}'>vente</a>")
+
+     def pertes(self, obj:Perte):
+         return mark_safe(f"<a href='/admin/api/perte/?perte__id={obj.id}'>perte</a>")
+     @transaction.atomic
+     def vendre (self,request,queryset:list[Produit]):
+        user = request.user
+        profile:Profile =user.profile
+        commande= Commande(vendeur = profile )
+        commande.save()
+        for produit in queryset:
+            vente = Vente(produit=produit,commande=commande,quantite=1)
+            commande.prix_total += produit.prix
+            produit.quantite -=1
+            vente.save()
+            produit.save()
+        commande.save()
+        self.message_user (request,f"la commande valant {commande.prix_total} a ete soumise",messages.SUCCESS)
+     vendre.short_description="dandaza izi produits"
+
+     @transaction.atomic
+     def perdue(self, request, queryset):
+        user = request.user  
+        for produit in queryset:
+                perte = Perte.objects.create(produit=produit, quantite=produit.quantite, user=user)
+                produit.quantite -= 1
+                produit.save()
+                messages.success(request, f"{produit.nom} a été marqué comme perdu.")
+     perdue.short_description = "Marquer comme perdu"
 
 
+     @transaction.atomic
+     def augmenter_stock(self, request, queryset):
+        for produit in queryset:
+            produit.quantite += 5 
+            produit.save()
+            stock = Stock.objects.get(produit=produit)
+            stock.quantite += 5
+            stock.save()
+            messages.success(request, "5 unités ont été ajoutées à chaque produit sélectionné et stock.", messages.SUCCESS)
+
+
+     def get_queryset(self,request):
+           user = request.user
+           if Profile.objects.filter(user=user).exists():
+             profile = user.profile
+             kiosks =[]
+             for attribution in Attribution.objects.filter(profile=profile):
+                 kiosks.append(attribution.kiosk)
+             Produit.objects.filter(kiosk__in=kiosks)
+             return  Produit.objects.all()
+           #  attributions = Attribution.objects.filter()
+           self.message_user(request,"nta profile ufise nta na kimwe wobona!",messages.ERROR)
+           return Produit.objects.none()
+   
+    #  def augmenter_stock(self,request,queryset:list[Produit]):
+    #      user = request.user
+    #      profile:Profile = user.profile
+    #      for produit in queryset:
+    #          stock = Stock.objects.get_or_create(profile = profile,produit = produit,quantite = 5)
+    #          stock.quantite +=5
+    #          produit.quantite += stock.quantite
+    #          stock.save()
+    #          produit.save()
+    #  augmenter_stock.short_description = "kwongeramwo muri stock"
+
+     
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
      list_display= "produit","quantite","expiration","profile","created_at",
@@ -73,9 +147,9 @@ class EtagereAdmin(admin.ModelAdmin):
      
 @admin.register(Vente)
 class VenteAdmin(admin.ModelAdmin):
-      list_display= "produit","quantite","commande"
+      list_display= "produit","quantite","commande",
       search_fields = "produit","quantite",
-      list_filter = "produit","quantite",
+      list_filter = "produit","quantite","commande"
 
       def save_model(self, request, obj:Stock, form, change):
         if not change :
@@ -107,39 +181,26 @@ class ClientAdmin(admin.ModelAdmin):
       search_fields = "nom","telephone",
       list_filter = "nom",
 
-#@admin.register(Commande)
-# class CommandeAdmin(admin.ModelAdmin):
-#      list_display= "vendeur","date",
-#      search_fields = "vendeur","client",
-#      list_filter = "vendeur","date",
-
-
 #je veux que a chaque fois je fais un paiement, il vient s'ajouter dans la partie get_montant.donc dans montant_paye sera montre la sommation de toutes les paiements deja effectue
              
 
-#     def get_vendeur_attributs(self,obj):
-#          return f"{obj.vendeur__user.first_name} {obj.vendeur.user.last_name} {obj.vendeur.telephone}"
-
-#     def prix_total(self):
-#         total = sum(vente.prix_total for vente in self.vente_set.all())
-#         return total
-
 @admin.register(Commande)
-class CommandeAdmin(admin.ModelAdmin):
-    list_display = ['vendeur', 'date', 'get_prix_total', 'client','montant_paye']
+class CommandeAdmin(ModelAdminTotals):
+    list_display = ['vendeur', 'date', 'prix_total', 'client','montant_paye','produits']
     list_filter = 'date',
     search_fields = 'vendeur__user__first_name', 'vendeur__user__last_name',
     readonly_fields = ['prix_total','montant_paye']
+    #list_totals =("prix_total" ,models.sum)
 
     def save_model(self, request, obj, form, change):
         vendeur = request.user.profile
         obj.vendeur = vendeur
         obj.save()
 
-    def get_prix_total(self, obj):
+    def prix_total(self, obj):
         total = sum(vente.produit.prix * vente.quantite for vente in obj.vente_set.all())
         return total
-    get_prix_total.short_description = 'Prix Total'
+    prix_total.short_description = 'Prix Total'
 
     def delete_model(self, request, obj:Commande):
         produit = obj.produit
@@ -160,9 +221,11 @@ class CommandeAdmin(admin.ModelAdmin):
         payments = Payment.objects.filter(commande=obj)
         total_paid = sum(payment.somme for payment in payments)
         return total_paid
+    
+    def produits(self, obj:Commande):
+        return mark_safe(f"<a href='/admin/api/vente/?commande__id={obj.id}'>produits</a>")
+        
     #montant_paye.short_description = 'Montant Payé'
-
-
 
 
 @admin.register(Payment)
@@ -170,15 +233,7 @@ class PaymentAdmin(admin.ModelAdmin):
       list_display= "commande","somme","date","receveur",
       search_fields = "commande","receveur",
       list_filter = "commande","date","receveur",
-
-     #  def save_model(self, request, obj, form, change):
-     #    obj.save()
-     #    commande = obj.commande
-     #    total_paid = Payment.objects.filter(commande=commande).aggregate(total_paid=models.Sum('somme'))['total_paid']
-     #    commande.montant_paye = total_paid
-     #    commande.save()
-
-     
+ 
           
 @admin.register(Perte)
 class PerteAdmin(admin.ModelAdmin):
@@ -191,6 +246,8 @@ class PerteAdmin(admin.ModelAdmin):
         if not change :
              produit = obj.produit
              produit.quantite -= obj.quantite
+            #  produit.quantite = models.F("quantite")-obj.quantite
+            #  produit.refresh_from_db()
              produit.save()
         obj.user = request.user
         obj.save()
@@ -228,10 +285,3 @@ class PerteAdmin(admin.ModelAdmin):
 
 
 
-     
-# admin.register(History)
-
-
-# @admin.register(Province)
-# class ProvinceAdmin(admin.ModelAdmin):
-#     display_fields = "nom",

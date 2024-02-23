@@ -39,7 +39,20 @@ class Produit(models.Model):
     nom = models.CharField(max_length=64)
     kiosk = models.ForeignKey(Kiosk,on_delete = models.CASCADE)
     prix = models.FloatField()
-    quantite = models.FloatField(default=0)
+    quantite = models.FloatField(default=0,editable=False)
+    
+    class Meta:
+        ordering = "quantite",
+        verbose_name_plural ="Amaproduit",
+        unique_together ="nom","kiosk",
+        constraints= [
+            models.CheckConstraint(
+                check=models.Q(quantite__gte=0),
+                name="quantite ntishobora kuba negative"),
+                models.CheckConstraint(
+                    check=models.Q(prix__gte=100),
+                    name="prix ntishobora kuba negative"),
+                 ]
 
     # def quantite(self):
     #     en_stock= vendue= perdue=0
@@ -141,6 +154,10 @@ class Perte(models.Model):
     quantite = models.FloatField()
     motif = models.CharField(max_length=256)
     date = models.DateTimeField(auto_now_add=True)
+
+    # class Meta:
+    #     ordering = ('quantite')
+    #     plural_name =
 
     def __str__(self):
         return f"{self.quantite} de {self.produit}"

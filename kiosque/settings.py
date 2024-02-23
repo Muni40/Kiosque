@@ -42,12 +42,11 @@ INSTALLED_APPS = [
     #"corsheaders",
     #"rest_framework",
     ##"rest_framework.authtoken",
+    #'admin_totals'
     "api",
     "jazzmin",
+    'import_export',
 ]
-
-
-
 
 
 MIDDLEWARE = [
