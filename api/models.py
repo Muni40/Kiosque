@@ -13,7 +13,7 @@ class Profile(models.Model):
 
     class Meta:
         ordering = "user", 
-        verbose_name_plural ="Profiles",
+        verbose_name_plural ="Profiles"
 
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name} {self.telephone}"
@@ -28,7 +28,7 @@ class Kiosk(models.Model):
 
     class Meta:
         ordering = "nom",
-        verbose_name_plural ="Kiosks",
+        verbose_name_plural ="Kiosks"
 
     def __str__(self):
         return f"{self.nom}"
@@ -41,7 +41,7 @@ class Attribution(models.Model):
 
     class Meta:
         ordering = "profile",
-        verbose_name_plural ="Attributions",
+        verbose_name_plural ="Attributions"
 
     def __str__(self):
         return f"{self.attribution}"
@@ -55,7 +55,7 @@ class Produit(models.Model):
     
     class Meta:
         ordering = "quantite",#Indique que les instances de ce modèle doivent être triées en fonction de la quantité du produit par défaut.
-        verbose_name_plural ="Amaproduit",# Définit le nom pluriel utilisé pour ce modèle dans l'interface d'administration Django.
+        verbose_name_plural ="Produits"# Définit le nom pluriel utilisé pour ce modèle dans l'interface d'administration Django.
         unique_together ="nom","kiosk", # Cela signifie qu'un produit ne peut pas être ajouté deux fois au même kiosque avec le même nom.  
         constraints= [
             models.CheckConstraint(
@@ -92,10 +92,11 @@ class Stock (models.Model):
     expiration = models.DateField() 
     profile = models.ForeignKey(Profile,on_delete = models.PROTECT,editable=False)# ce qui signifie que si le profil utilisateur auquel ce stock est associé est supprimé, cela lèvera une exception ProtectedError. Cela protège le stock en cas de suppression accidentelle du profil utilisateur.
     prix_achat = models.FloatField()
+    kiosk = models.ForeignKey(Kiosk, on_delete=models.PROTECT)
 
     class Meta:
         ordering = "quantite",
-        verbose_name_plural ="Stocks",
+        verbose_name_plural ="Stocks"
         # constraints= [
         #     models.CheckConstraint(
         #         check=models.Q(quantite__gte=0),
@@ -126,7 +127,7 @@ class Client(models.Model):
     
     class Meta:
         ordering = "nom",
-        verbose_name_plural ="Clients",
+        verbose_name_plural ="Clients"
     def __str__(self):
         return f"{self.nom} {self.telephone}"
     
@@ -136,10 +137,10 @@ class Commande(models.Model):
     date = models.DateTimeField(auto_now_add=True)
     prix_total =models.FloatField(editable=False, default=0)
     client =models.ForeignKey(Client,null=True,blank=True,on_delete=models.SET_NULL)#ce qui signifie que si le client associé à cette commande est supprimé, le champ sera défini sur NULL, ce qui permet de conserver la commande sans client associé. Ce champ peut être nul (null=True) et vide (blank=True).
-
+    kiosk = models.ForeignKey(Kiosk,on_delete =models.CASCADE)
     class Meta:
         ordering = "date",
-        verbose_name_plural ="Commandes",
+        verbose_name_plural ="Commandes"
         # constraints= [
         #         models.CheckConstraint(
         #             check=models.Q(prix_total__gte=100),
@@ -167,10 +168,11 @@ class Vente(models.Model):
     produit = models.ForeignKey(Produit,on_delete = models.PROTECT)
     quantite = models.FloatField()
     commande =models.ForeignKey(Commande,on_delete = models.CASCADE)
+    kiosk = models.ForeignKey(Kiosk,on_delete = models.PROTECT)
     #prix_total = models.FloatField()
     class Meta:
         ordering = "quantite",
-        verbose_name_plural ="Ventes",
+        verbose_name_plural ="Ventes"
         # constraints= [
         #     models.CheckConstraint(
         #         check=models.Q(quantite__gte=0),
@@ -186,10 +188,10 @@ class Payment(models.Model):
     somme = models.FloatField()
     receveur =models.ForeignKey(Profile, on_delete=models.PROTECT,editable=False)
     date =models.DateTimeField(auto_now_add=True)
-
+    kiosk = models.ForeignKey(Kiosk, on_delete=models.PROTECT)
     class Meta:
         ordering = "date",
-        verbose_name_plural ="Payments",
+        verbose_name_plural ="Payments"
 
     def __str__(self):
         return f"{self.somme} BIF sur {self.commande} recu par {self.receveur.user.last_name}"
@@ -202,10 +204,11 @@ class Perte(models.Model):
     quantite = models.FloatField()
     motif = models.CharField(max_length=256)
     date = models.DateTimeField(auto_now_add=True)
+    kiosk = models.ForeignKey(Kiosk, on_delete=models.PROTECT)
 
     class Meta:
         ordering = 'quantite',
-        verbose_name_plural = "Pertes",
+        verbose_name_plural = "Pertes"
 
     def __str__(self):
         return f"{self.quantite} de {self.produit}"

@@ -18,7 +18,22 @@ from django.contrib import admin
 from django.urls import path,include
 from rest_framework import routers
 from .views import *
+
+router = routers.DefaultRouter()
+
+router.register('produits', ProduitViewset)
+router.register('kiosks',KioskViewset)
+router.register('attributions',AttributionsViewset)
+router.register('commandes',CommandeViewset)
+router.register('stocks',StocksViewset)
+router.register('profiles',ProfileViewset)
+router.register('ventes',VenteViewset)
+router.register('payments',PaymentViewset)
+router.register('pertes',PerteViewset)
+router.register('clients',ClientViewset)
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    # path('admin/', admin.site.urls),
+    path('', include(router.urls)),
    # path('api-auth/', include('rest_framework.urls')),
 ]

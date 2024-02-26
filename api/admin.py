@@ -43,7 +43,7 @@ class AttributionAdmin(admin.ModelAdmin):
 
 @admin.register(Produit)
 class ProduitAdmin(ImportExportModelAdmin,admin.ModelAdmin):
-     list_display = "nom","kiosk" ,"prix","quantite","ventes","pertes"    
+     list_display = "nom","kiosk" ,"prix","quantite","ventes","pertes" ,   
      search_fields= "nom","kiosk__nom",
      list_filter = "nom","kiosk__nom","prix",
      list_editable ="prix",#Cette configuration indique quels champs peuvent être édités directement depuis la vue liste de l'interface d'administration. Dans cet exemple, le champ prix est défini comme éditable dans la liste.
@@ -137,7 +137,7 @@ class ProduitAdmin(ImportExportModelAdmin,admin.ModelAdmin):
      
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-     list_display= "produit","quantite","expiration","profile","created_at",
+     list_display= "produit","quantite","expiration","profile","created_at",'kiosk',
      search_fields= "produit","created_at","expiration",
      list_filter = "produit","expiration",
 
@@ -174,11 +174,11 @@ class StockAdmin(admin.ModelAdmin):
              for attribution in Attribution.objects.filter(profile=profile): #Si un profil utilisateur existe, on récupère tous les kiosques associés à ce profil à travers les objets Attribution. On boucle à travers les attributions pour ce profil et on ajoute les kiosques correspondants à une liste kiosks.
                  kiosks.append(attribution.kiosk) 
              #Produit.objects.filter(kiosk__in=kiosks)#On filtre les produits pour ne sélectionner que ceux qui sont associés aux kiosques récupérés dans l'étape précédente. Cela est réalisé en utilisant la méthode filter() avec l'argument kiosk__in=kiosks.
-             return Produit.objects.filter(kiosk__in=kiosks)
+             return Stock.objects.filter(kiosk__in=kiosks)
              #return  Produit.objects.all() # Le queryset filtré des produits est retourné.
            #  attributions = Attribution.objects.filter()
            self.message_user(request,"nta profile ufise nta na kimwe wobona!",messages.ERROR)# Si aucun profil n'est associé à l'utilisateur connecté, un message d'erreur est affiché à l'utilisateur à l'aide de self.message_user(). Dans ce cas, la méthode retourne un queryset vide en utilisant Produit.objects.none().
-           return Produit.objects.none()
+           return Stock.objects.none()
 
     
 #quantite = quantite_se_trouvant_dans_le_stock -quantite_vendue-quantite_perdue     
@@ -191,7 +191,7 @@ class EtagereAdmin(admin.ModelAdmin):
      
 @admin.register(Vente)
 class VenteAdmin(admin.ModelAdmin):
-      list_display= "produit","quantite","commande",
+      list_display= "produit","quantite","commande",'kiosk',
       search_fields = "produit","quantite",
       list_filter = "produit","quantite","commande"
 
@@ -226,11 +226,11 @@ class VenteAdmin(admin.ModelAdmin):
              for attribution in Attribution.objects.filter(profile=profile): #Si un profil utilisateur existe, on récupère tous les kiosques associés à ce profil à travers les objets Attribution. On boucle à travers les attributions pour ce profil et on ajoute les kiosques correspondants à une liste kiosks.
                  kiosks.append(attribution.kiosk) 
              #Produit.objects.filter(kiosk__in=kiosks)#On filtre les produits pour ne sélectionner que ceux qui sont associés aux kiosques récupérés dans l'étape précédente. Cela est réalisé en utilisant la méthode filter() avec l'argument kiosk__in=kiosks.
-             return Produit.objects.filter(kiosk__in=kiosks)
+             return Vente.objects.filter(kiosk__in=kiosks)
              #return  Produit.objects.all() # Le queryset filtré des produits est retourné.
            #  attributions = Attribution.objects.filter()
            self.message_user(request,"nta profile ufise nta na kimwe wobona!",messages.ERROR)# Si aucun profil n'est associé à l'utilisateur connecté, un message d'erreur est affiché à l'utilisateur à l'aide de self.message_user(). Dans ce cas, la méthode retourne un queryset vide en utilisant Produit.objects.none().
-           return Produit.objects.none()
+           return Vente.objects.none()
  
 
 @admin.register(Client)
@@ -259,7 +259,7 @@ class ClientAdmin(admin.ModelAdmin):
 
 @admin.register(Commande)
 class CommandeAdmin(admin.ModelAdmin):
-    list_display = ['vendeur', 'prix_total', 'client','montant_paye','produits']
+    list_display = ['vendeur', 'prix_total', 'client','montant_paye','produits','kiosk']
     list_filter = 'date',
     search_fields = 'vendeur__user__first_name', 'vendeur__user__last_name',
     readonly_fields = ['prix_total','montant_paye']# Cette configuration spécifie les champs qui sont en lecture seule dans l'interface d'administration.
@@ -298,11 +298,11 @@ class CommandeAdmin(admin.ModelAdmin):
              for attribution in Attribution.objects.filter(profile=profile): #Si un profil utilisateur existe, on récupère tous les kiosques associés à ce profil à travers les objets Attribution. On boucle à travers les attributions pour ce profil et on ajoute les kiosques correspondants à une liste kiosks.
                  kiosks.append(attribution.kiosk) 
              #Produit.objects.filter(kiosk__in=kiosks)#On filtre les produits pour ne sélectionner que ceux qui sont associés aux kiosques récupérés dans l'étape précédente. Cela est réalisé en utilisant la méthode filter() avec l'argument kiosk__in=kiosks.
-             return Produit.objects.filter(kiosk__in=kiosks)
+             return Commande.objects.filter(kiosk__in=kiosks)
              #return  Produit.objects.all() # Le queryset filtré des produits est retourné.
            #  attributions = Attribution.objects.filter()
            self.message_user(request,"nta profile ufise nta na kimwe wobona!",messages.ERROR)# Si aucun profil n'est associé à l'utilisateur connecté, un message d'erreur est affiché à l'utilisateur à l'aide de self.message_user(). Dans ce cas, la méthode retourne un queryset vide en utilisant Produit.objects.none().
-           return Produit.objects.none()
+           return Commande.objects.none()
 
     def montant_paye(self, obj):
         payments = Payment.objects.filter(commande=obj)
@@ -317,7 +317,7 @@ class CommandeAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-      list_display= "commande","somme","date","receveur",
+      list_display= "commande","somme","date","receveur",'kiosk'
       search_fields = "commande","receveur",
       list_filter = "commande","date","receveur",
 
@@ -334,16 +334,16 @@ class PaymentAdmin(admin.ModelAdmin):
              for attribution in Attribution.objects.filter(profile=profile): #Si un profil utilisateur existe, on récupère tous les kiosques associés à ce profil à travers les objets Attribution. On boucle à travers les attributions pour ce profil et on ajoute les kiosques correspondants à une liste kiosks.
                  kiosks.append(attribution.kiosk) 
              #Produit.objects.filter(kiosk__in=kiosks)#On filtre les produits pour ne sélectionner que ceux qui sont associés aux kiosques récupérés dans l'étape précédente. Cela est réalisé en utilisant la méthode filter() avec l'argument kiosk__in=kiosks.
-             return Produit.objects.filter(kiosk__in=kiosks)
+             return Payment.objects.filter(kiosk__in=kiosks)
              #return  Produit.objects.all() # Le queryset filtré des produits est retourné.
            #  attributions = Attribution.objects.filter()
            self.message_user(request,"nta profile ufise nta na kimwe wobona!",messages.ERROR)# Si aucun profil n'est associé à l'utilisateur connecté, un message d'erreur est affiché à l'utilisateur à l'aide de self.message_user(). Dans ce cas, la méthode retourne un queryset vide en utilisant Produit.objects.none().
-           return Produit.objects.none()
+           return Payment.objects.none()
  
           
 @admin.register(Perte)
 class PerteAdmin(admin.ModelAdmin):
-      list_display= "produit","quantite","motif","date",
+      list_display= "produit","quantite","motif","date",'kiosk'
       search_fields = "produit","motif","quantite",
       list_filter = "date",
 
@@ -383,11 +383,11 @@ class PerteAdmin(admin.ModelAdmin):
              for attribution in Attribution.objects.filter(profile=profile): #Si un profil utilisateur existe, on récupère tous les kiosques associés à ce profil à travers les objets Attribution. On boucle à travers les attributions pour ce profil et on ajoute les kiosques correspondants à une liste kiosks.
                  kiosks.append(attribution.kiosk) 
              #Produit.objects.filter(kiosk__in=kiosks)#On filtre les produits pour ne sélectionner que ceux qui sont associés aux kiosques récupérés dans l'étape précédente. Cela est réalisé en utilisant la méthode filter() avec l'argument kiosk__in=kiosks.
-             return Produit.objects.filter(kiosk__in=kiosks)
+             return Perte.objects.filter(kiosk__in=kiosks)
              #return  Produit.objects.all() # Le queryset filtré des produits est retourné.
            #  attributions = Attribution.objects.filter()
            self.message_user(request,"nta profile ufise nta na kimwe wobona!",messages.ERROR)# Si aucun profil n'est associé à l'utilisateur connecté, un message d'erreur est affiché à l'utilisateur à l'aide de self.message_user(). Dans ce cas, la méthode retourne un queryset vide en utilisant Produit.objects.none().
-           return Produit.objects.none()
+           return Perte.objects.none()
 
     
  
