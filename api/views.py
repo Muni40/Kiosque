@@ -7,9 +7,11 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt import authentication
 from rest_framework.response import Response
 
-class ProfileViewset(mixins.ListModelMixin, viewsets.GenericViewSet):
+class ProfileViewset(viewsets.ModelViewSet):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
+
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
     permission_classes = [AllowAny]
     #authentication_classes = authentication.JWTAuthentication.SessionAuthentication
     # we can override crud
@@ -18,6 +20,7 @@ class ProfileViewset(mixins.ListModelMixin, viewsets.GenericViewSet):
     #     validated_data=serializer.is_valid(raise_exception=True)
     #     print(validated_data)
     #     return Response({'status':"tuzoba turagira creation"})
+
 
 class AttributionsViewset(viewsets.ModelViewSet):
     queryset = Attribution.objects.all()
@@ -49,6 +52,7 @@ class CommandeViewset(viewsets.ModelViewSet):
 class KioskViewset(viewsets.ModelViewSet):
     queryset = Kiosk.objects.all()
     serializer_class = KioskSerializer
+    permission_classes = [AllowAny]
 
 class VenteViewset(viewsets.ModelViewSet):
     queryset = Vente.objects.all()

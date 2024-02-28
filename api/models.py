@@ -107,7 +107,7 @@ class Stock (models.Model):
         #          ]
 
     def __str__(self) -> str:
-        return f"{self.produit} du {self.created_at}"
+        return f"{self.produit.nom} du {self.created_at}"
    
 class Etagere(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -180,7 +180,7 @@ class Vente(models.Model):
         #          ]
 
     def __str__(self) :
-        return f"{self.quantite} de {self.produit} "
+        return f"{self.quantite} de {self.produit.nom} "
 
 class Payment(models.Model):
     id = models.BigAutoField(primary_key=True)
