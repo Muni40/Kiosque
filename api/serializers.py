@@ -5,16 +5,30 @@ class ProduitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Produit
         fields = "__all__"
+class Change_PrixSerializer(serializers.Serializer):
+    old_prix= serializers.CharField()
+    new_prix= serializers.CharField()
+    confirm_prix= serializers.CharField(required=True)
 
 class KioskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Kiosk
         fields = "__all__"
 
+class Change_AdresseSerializer(serializers.Serializer):
+    old_addresse= serializers.CharField()
+    new_addresse= serializers.CharField()
+    confirm_addresse= serializers.CharField(required=True)
+
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = "__all__"
+
+class Change_PasswordSerializer(serializers.Serializer):
+    old_password= serializers.CharField()
+    new_password= serializers.CharField()
+    confirm_password= serializers.CharField(required=True)
 
 class AttributionsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -56,3 +70,6 @@ class ClientsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
         fields = "__all__"
+
+
+    

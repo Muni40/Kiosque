@@ -38,6 +38,24 @@ class TestProfileViewSet(TestSetUp):
         print(res.data)
         self.assertEqual(res.status_code, 201)
 
+    
+    def test_invalid_post_profile(self):
+        detail = "Post Profile"
+        print(f"{detail:=^30}")
+        user = {
+            "username":"celine",
+            "password":"dede1990",
+            "first_name":"celine",
+            "last_name":"Irakoze",
+    }
+        created_user = createUser(user)
+        data = {
+            "telephone":"257 64321980",
+           
+        }
+        res = self.client.post(self.profile_list_url,data)
+        print(res.data)
+        self.assertEqual(res.status_code, 201)
 
 
 class TestKioskViewSet(TestSetUp):
