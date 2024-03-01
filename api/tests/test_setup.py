@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase,APIClient
 from .datas import prepopulateProfiles,prepopulateKiosks,User,prepopulateProduits,prepopulateClients
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer,RefreshToken
 #from django.contrib.auth.models import User
 
 class TestSetUp(APITestCase):

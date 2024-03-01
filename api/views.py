@@ -3,8 +3,8 @@ from django.shortcuts import render
 from .models import *
 from .serializers import *
 from rest_framework.authentication import SessionAuthentication
-from rest_framework.permissions import AllowAny
-from rest_framework_simplejwt import authentication
+from rest_framework.permissions import AllowAny,IsAuthenticated
+from rest_framework_simplejwt import authentication 
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
@@ -192,7 +192,8 @@ class PaymentViewset(viewsets.ModelViewSet):
 class ClientViewset(viewsets.ModelViewSet):
     queryset = Client.objects.all()
     serializer_class = ClientsSerializer
-    actions = 'delete_client'
+    permission_classes = [AllowAny]
+    #actions = 'delete_client'
 
     @action(detail=True, methods=['delete'],serializer_class=ClientsSerializer)
     def delete_client(self, request,pk=None):
@@ -205,3 +206,23 @@ class ClientViewset(viewsets.ModelViewSet):
             return Response({'status': 'client non trouve'}, status=400)
         return Response({'status': 'client supprimer'}, status=200),
     
+    @action(detail=True,methods=['post'],serializer_class=Change_Telephone_clientSerializer)
+    def change_telephone_client(self, request,pk):
+        serializer= Change_Telephone_clientSerializer(data=request.data)
+       # print("ytytytytytytytytytyty",new_telephone)
+        if serializer.is_valid():
+            client = self.get_object()
+            old_telephone =serializer.validated_data['old_telephone']
+            new_telephone = serializer.validated_data['new_telephone']  
+            confirm_telephone = serializer.validated_data['confirm_telephone']
+        
+            if (old_telephone==old_telephone and new_telephone == confirm_telephone):
+                
+                client.telephone = new_telephone
+                client.save()
+            else:
+                return Response({'status': 'Telephone do not match'}, status=400)
+            
+            return Response({'status':"Telephone changed"},200)
+        return Response(serializer.errors, 400)
+

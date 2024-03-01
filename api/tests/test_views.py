@@ -210,12 +210,66 @@ class TestClientViewSet(TestSetUp):
         self.assertEqual(Client.objects.count(), 3)
         print(response.data)
 
+    def test_action_telephone(self):
+        self.client.credentials()
+        url= reverse('client-change-telephone-client',kwargs={'pk': 1})
+
+        data = {
+            'old_telephone': '+25760000453',
+            'new_telephone': '68765432', 
+            'confirm_telephone': '68765432'
+        }
+        print(url)
+        print("client",Client.objects.get(id=1).telephone)
+        response = self.client.post(url, data)     
+        print(response.data)
+        self.assertEqual(response.status_code, 200)
+
+
+    def test_invalid_action_telephone(self):
+        url= reverse('client-change-telephone-client',kwargs={'pk': 1})
+        data = {'old_telephone': '25760000453', 'new_telephone': '68765432'}
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(Client.objects.get(id=3).telephone, '+25760000453')
+        self.assertEqual(response.status_code, 400)
 
 
 
 
 
 
+
+#  def setUp(self):
+#         self.client = Client.objects.create(name='John Doe', telephone='1234567890')
+
+#     def test_change_telephone_client_success(self):
+#         url = reverse('client-change-telephone-client', kwargs={'pk': self.client.pk})
+#         data = {'old_telephone': '1234567890', 'new_telephone': '9876543210', 'confirm_telephone': '9876543210'}
+#         client = APIClient()
+#         response = client.put(url, data, format='json')
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(Client.objects.get(pk=self.client.pk).telephone, '9876543210')
+
+
+
+
+
+
+
+
+
+
+ # view = TestClientViewSet(actions={'get': 'change_telephone_client'})
+        # request = self.factory.get(url, {'id_user': 2})
+        # response = view(request)
+
+
+# def test_GetUserAgenda(self):
+#     request_url = f'Agenda/get_user_agenda/'
+#     view = AgendaViewSet.as_view(actions={'get': 'retrieve'})
+#     request = self.factory.get(request_url, {'id_user': 15})
+#     response = view(request)
+#     self.assertEqual(response.status_code, 400)
 
 
 # from rest_framework import APITestCase

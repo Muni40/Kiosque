@@ -123,18 +123,16 @@ def createproduit(produit):
 
 clients = [
     {
-            "id":3,
             "nom": "Eddy",
             # "addresse": "Kanyosha",
-            "telephone": "+257 60000453",
+            "telephone": "+25760000453",
             "nif": "0023499",
             # "RC": "0098099",
     },
     {
-            "id":4,
             "nom": "Alida",
             # "addresse": "Gihosha",
-            "telephone": "+257 63000000",
+            "telephone": "+25763000000",
             "nif": "002367",
             # "RC": "0098543",
     }

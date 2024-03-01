@@ -70,6 +70,10 @@ class ClientsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
         fields = "__all__"
+class Change_Telephone_clientSerializer(serializers.Serializer):
+    old_telephone= serializers.CharField()
+    new_telephone= serializers.CharField()
+    confirm_telephone= serializers.CharField(required=True)
 
 
     
