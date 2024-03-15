@@ -106,6 +106,7 @@ class Stock (models.Model):
         #         #     name="prix ntishobora kuba negative"),
         #          ]
 
+
     def __str__(self) -> str:
         return f"{self.produit.nom} du {self.created_at}"
    
