@@ -41,6 +41,7 @@ class ProduitAdmin(ImportExportModelAdmin,admin.ModelAdmin):
      #La méthode vendre dans la classe ProduitAdmin est une action personnalisée qui permet de vendre des produits sélectionnés dans l'interface d'administration
 
 
+
      @transaction.atomic  # Cette méthode est décorée avec @transaction.atomic pour garantir que toutes les opérations de base de données liées à cette action se déroulent dans une transaction, assurant ainsi la cohérence des données.
      def perdue(self, request, queryset):
         user = request.user  
