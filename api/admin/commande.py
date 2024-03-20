@@ -11,6 +11,7 @@ class CommandeAdmin(admin.ModelAdmin):
     readonly_fields = ['prix_total','montant_paye']# Cette configuration spécifie les champs qui sont en lecture seule dans l'interface d'administration.
     #list_totals =("prix_total" ,models.sum)
 
+
     def save_model(self, request, obj, form, change): #Cette méthode est appelée chaque fois qu'un modèle est sauvegardé via l'interface d'administration. Elle récupère le vendeur à partir de l'utilisateur actuellement connecté et l'associe à la commande avant de sauvegarder.
         vendeur = request.user.profile
         obj.vendeur = vendeur
