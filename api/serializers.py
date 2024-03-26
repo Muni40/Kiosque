@@ -15,6 +15,7 @@ class KioskSerializer(serializers.ModelSerializer):
         model = Kiosk
         fields = "__all__"
 
+
 class Change_AdresseSerializer(serializers.Serializer):
     old_addresse= serializers.CharField()
     new_addresse= serializers.CharField()
